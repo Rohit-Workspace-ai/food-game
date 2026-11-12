@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Chai Wala 3D — Cafe Tycoon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#1a1209;--fg:#fff3dc;--ac:#ffb300;color-scheme:dark}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
+canvas{position:fixed;inset:0;width:100vw;height:100%;display:block}#joy{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:130px;height:130px;border-radius:50%;background:#fff3;border:2px solid #fff6;z-index:3;touch-action:none}#knob{position:absolute;left:45px;top:45px;width:40px;height:40px;border-radius:50%;background:#ffb300cc;pointer-events:none}
+#hud{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.pill{background:#000b;border-radius:20px;padding:6px 12px;font-weight:700;font-size:14px}
+#hint{position:absolute;top:calc(env(safe-area-inset-top,0px) + 52px);left:0;right:0;text-align:center;font-size:12px;opacity:.9}
+button{font:inherit;border:0;border-radius:12px;padding:10px 14px;font-weight:700;background:var(--ac);color:#2b1700}
+button:disabled{opacity:.45}
+.ov{position:absolute;inset:0;background:#000d;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.box{background:#2a1c10;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:90%;overflow:auto}
+.box h2{margin:0 0 8px}.box button{width:100%;margin-top:8px}.ok{background:#43a047;color:#fff}.alt{background:#5d4037;color:var(--fg)}
+#pn{position:absolute;left:0;right:0;bottom:0;display:none;padding:10px 10px calc(env(safe-area-inset-bottom,0px) + 10px);z-index:4}
+select{width:100%;padding:8px;border-radius:8px;margin-top:4px}small{opacity:.75}
+
+#levelbar{position:absolute;top:calc(env(safe-area-inset-top,0px) + 86px);left:50%;transform:translateX(-50%);background:#241508eF;border:1px solid #ffd27a;border-radius:14px;padding:7px 13px;font-size:12px;font-weight:800;z-index:2;white-space:nowrap;text-align:center}
+#dress{position:absolute;right:12px;bottom:22px;z-index:3;background:#ffe0a3;color:#321b08;padding:9px 12px}
+#outfit .box{max-width:420px}
+.outfits{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.outfits button{margin:0}
+
+#rotate{display:none;position:fixed;inset:0;z-index:20;background:#0009;align-items:center;justify-content:center;text-align:center;padding:18px}
+.rotate-card{max-width:340px;background:#2a1c10;border:1px solid #ffd27a;border-radius:20px;padding:22px;color:var(--fg);box-shadow:0 12px 40px #0009}
+.rotate-card p{line-height:1.45}.rotate-actions{display:flex;gap:8px;margin-top:14px}.rotate-actions button{flex:1;margin:0}.rotate-actions .alt{background:#5d4037;color:var(--fg)}
+@media (orientation:portrait) and (max-width:900px){#hud{gap:4px;right:6px;left:6px;max-width:100%;}.pill{font-size:11px;padding:5px 7px}#joy{width:112px;height:112px;bottom:14px;left:12px}#knob{left:36px;top:36px}#dress{right:10px;bottom:14px;padding:8px 10px}#hint{top:116px;padding:0 8px;font-size:11px}#levelbar{top:76px;font-size:11px}#pn{max-height:68%;overflow:auto}}
+@media (orientation:landscape){#hud{flex-wrap:nowrap;top:calc(env(safe-area-inset-top,0px) + 6px);left:10px;right:10px}#hint{top:calc(env(safe-area-inset-top,0px) + 48px)}#levelbar{top:calc(env(safe-area-inset-top,0px) + 76px)}#joy{width:108px;height:108px;left:14px;bottom:14px}#knob{left:34px;top:34px}#dress{right:14px;bottom:14px}#pn{max-height:55%;overflow:auto}}
+@media (max-height:430px) and (orientation:landscape){#hint{display:none}#levelbar{top:48px}#joy{width:88px;height:88px}#knob{left:24px;top:24px;width:36px;height:36px}.pill{font-size:11px;padding:4px 8px}#dress{padding:7px 9px}}
+</style></head><body>
+<div id="rotate"><div class="rotate-card"><div style="font-size:42px">📱 ↔️</div><h2>Landscape recommended</h2><p>Chai Wala 3D looks and plays best in landscape mode. You can still continue in portrait — the game will automatically adjust to your screen.</p><div class="rotate-actions"><button class="alt" id="keepPortrait">Continue</button><button id="landscapeOk">Got it</button></div></div></div>
+<div id="hud"><span class="pill" id="co"></span><span class="pill" id="cr"></span><span class="pill" id="tag"></span><button id="fs">⛶</button><button id="pb">⭐ Premium</button></div>
+<div id="levelbar">LEVEL 1 · TEA SHOP · 0/6</div><button id="dress">👕 Outfit</button><div id="hint">Move with joystick • Prepare orders at stations • Serve customers • Outfit button changes your uniform</div><div id="joy"><div id="knob"></div></div>
+<div id="pn"><div class="box" id="pnb" style="margin:auto"></div></div>
+<div class="ov" id="pm"><div class="box" id="pmb"></div></div><div class="ov" id="outfit"><div class="box"><h2>👕 Player wardrobe</h2><p>Choose your shop uniform</p><div class="outfits" id="outfits"></div><button class="alt" id="outfitclose">Back to game</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=i=>document.getElementById(i),IG="https://instagram.com/",YT="https://youtube.com/";
+let S={coins:0,prem:0,look:"none",skin:"normal",done:{},U:[0,0,0,0],H:[0,0],level:1,progress:0,outfit:"chef"};
+try{Object.assign(S,JSON.parse(localStorage.getItem("chai2")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("chai2",JSON.stringify(S))}catch(e){}};
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));document.body.prepend(R.domElement);
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x87b8e8);
+const cam=new THREE.PerspectiveCamera(50,1,.1,100);let cx=3,K=1;
+function rs(){const w=Math.max(1,document.documentElement.clientWidth),h=Math.max(1,document.documentElement.clientHeight);R.setPixelRatio(Math.min(devicePixelRatio||1,2));R.setSize(w,h,false);R.domElement.style.width=w+"px";R.domElement.style.height=h+"px";const a=w/h;cam.aspect=a;K=a<1?1.65:(a<1.45?1.15:1);cam.fov=a<1?48:50;cam.updateProjectionMatrix()}
+addEventListener("resize",rs);rs();
+sc.add(new THREE.AmbientLight(0xffffff,.85));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(4,9,8);sc.add(dl);
+const M=(c,e)=>new THREE.MeshLambertMaterial({color:c,emissive:e||0});
+const add=(m,x,y,z,p)=>{m.position.set(x,y,z);p.add(m);return m};
+const B=(w,h,d,c,x,y,z,p,e)=>add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,e)),x,y,z,p);
+const C=(r,h,c,x,y,z,p,e)=>add(new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),M(c,e)),x,y,z,p);
+const P=(r,c,x,y,z,p)=>add(new THREE.Mesh(new THREE.SphereGeometry(r,16,12),M(c)),x,y,z,p);
+function lab(t,col,w){const c=document.createElement("canvas");c.width=256;c.height=64;const x=c.getContext("2d");x.fillStyle=col||"#000b";x.fillRect(0,0,256,64);x.fillStyle="#fff";x.font="bold 30px sans-serif";x.textAlign="center";x.fillText(t,128,43);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.scale.set(w||2.4,(w||2.4)/4,1);return s}
+const hs=[],CU=[],FX=[],SL=[null,null,null,null],CC=[0xa1662f,0xf2c94c],CN=["Masala","Ginger"];
+const FOODS=["Tea","Coffee","Pizza","Burger","Sandwich","French Fries","Dosa","Idli","Samosa","Puff","Noodles","Pasta","Momos","Paneer Roll","Veg Wrap","Garlic Bread","Pancake","Waffle","Donut","Muffin","Ice Cream","Milkshake","Lassi","Lemonade","Fresh Juice","Milk Tea","Green Tea","Hot Chocolate","Brownie","Cake","Cupcake","Cookies","Popcorn","Nachos","Tacos","Burrito","Fried Rice","Manchurian","Biryani","Paratha","Chole Bhature","Pav Bhaji","Pani Puri","Vada Pav","Kachori","Spring Roll","Shawarma","Falafel","Fruit Bowl","Special Thali"];
+const levelName=()=>FOODS[Math.min(49,Math.max(0,(S.level||1)-1))];
+function updateLevel(){const n=levelName();$("levelbar").textContent=`LEVEL ${S.level||1} · ${n.toUpperCase()} SHOP · ${S.progress||0}/6`; $("tag").textContent=`${n} • Lv ${S.level||1}`;}
+
+let paused=false,served=0,PL,shop,SG=new THREE.Group(),pn=0,lock=0;sc.add(SG);
+function human(o){const g=new THREE.Group(),sk=o.k||0xd7a77d,H={g,ph:0,c:[],t:null};
+const lg=x=>{const p=new THREE.Group();p.position.set(x,.85,0);C(.11,.8,o.p||0x2b3a67,0,-.4,0,p);B(.2,.1,.32,0x222222,0,-.82,.06,p);g.add(p);return p};
+H.L=lg(-.15);H.R=lg(.15);B(.62,.78,.34,o.s,0,1.28,0,g);
+const ar=x=>{const p=new THREE.Group();p.position.set(x,1.6,0);C(.08,.62,o.s,0,-.31,0,p);P(.08,sk,0,-.66,0,p);g.add(p);return p};
+H.AL=ar(-.4);H.AR=ar(.4);C(.08,.14,sk,0,1.74,0,g);
+const hd=new THREE.Group();hd.position.y=1.95;g.add(hd);P(.24,sk,0,0,0,hd).scale.y=1.12;
+[-.09,.09].forEach(x=>{P(.05,0xffffff,x,.04,.225,hd).scale.set(1,.8,.5);P(.025,0x111111,x,.04,.245,hd).scale.z=.5;B(.1,.02,.02,0x222222,x,.12,.23,hd);P(.04,sk,x*2.7,0,0,hd)});
+P(.04,sk,0,-.03,.24,hd).scale.set(1,1.2,1.1);B(.09,.02,.02,0x8b2e2e,0,-.12,.225,hd);
+const hc=o.hair!=null?o.hair:0x222222;
+if(!o.bald){const c=new THREE.Mesh(new THREE.SphereGeometry(.26,16,10,0,6.3,0,1.25),M(hc));c.scale.y=1.12;c.rotation.x=-.3;hd.add(c);if(o.long)B(.5,.6,.12,hc,0,-.3,-.18,hd)}
+if(o.hat){C(.27,.12,o.hat,0,.27,0,hd);B(.3,.03,.22,o.hat,0,.22,.2,hd)}
+if(o.towel)B(.56,.1,.5,0xff5252,0,.27,0,hd);
+if(o.gl){const m=B(.38,.08,.04,0,0,.04,.255,hd);m.material.transparent=true;m.material.opacity=.55}
+if(o.mu)B(.16,.03,.03,0x111111,0,-.08,.245,hd);
+if(o.chain){const t=add(new THREE.Mesh(new THREE.TorusGeometry(.2,.035,8,20),M(0xffd700,0x664400)),0,1.55,.2,g);t.rotation.x=1.3}
+if(o.bag)B(.3,.4,.14,0x7e57c2,0,1.3,-.25,g);
+H.cy=new THREE.Group();H.cy.position.set(0,1.3,.55);g.add(H.cy);if(o.sc)g.scale.setScalar(o.sc);return H}
+function spawnH(o,x,z){const h=human(o);h.g.position.set(x,0,z);hs.push(h);sc.add(h.g);return h}
+const TY=[{s:0x1e88e5,mu:1,n:"Ravi"},{s:0xe91e63,long:1,k:0xe0ac84,n:"Lakshmi"},{s:0x43a047,k:0x8d5524,hair:0x111111},{s:0xeeeeee,bald:1,gl:1,k:0xc68642,p:0x777777},{s:0xff9800,sc:.8,p:0x5d4037},
+{s:0xf06292,long:1,bag:1,k:0xf1c27d,p:0x1565c0},{s:0xc3a35b,hat:0x3e2f1a,mu:1,p:0x5d4a2a},{s:0x78909c,hat:0x455a64,k:0x8d5524,p:0x37474f},{s:0x111111,gl:1,hair:0x3e2723,k:0xf1c27d,p:0x111111}];
+const LK={none:{s:0xf5f5f5},coolie:{s:0xd32f2f,towel:1},mass:{s:0x111111,mu:1,gl:1,p:0x111111},shades:{s:0xf5f5f5,gl:1},gold:{s:0xf5f5f5,chain:1}};
+function mkPL(){let p=[3.5,1.2];if(PL){p=[PL.g.position.x,PL.g.position.z];sc.remove(PL.g);hs.splice(hs.indexOf(PL),1)}PL=spawnH({...LK[S.look],k:0xc68642,hair:0x1a1a1a},p[0],p[1]);PL.g.userData={};drawCarry(PL)}
+function drawCarry(h){while(h.cy.children.length)h.cy.remove(h.cy.children[0]);h.c.forEach((t,i)=>{const x=(i%2)*.22-.11,y=Math.floor(i/2)*.18,z=0,lv=S.level||1;if(lv<=2){C(.09,.15,CC[t],x,y,z,h.cy)}else if(lv===3){C(.15,.045,0xd99032,x,y,z,h.cy);C(.125,.012,0xc62828,x,y+.025,z,h.cy);P(.018,0xffe082,x-.05,y+.04,z+.03,h.cy);P(.018,0xffe082,x+.04,y+.04,z-.025,h.cy)}else if(lv===4){C(.13,.045,0x8d4e22,x,y,z,h.cy);C(.12,.07,0x43a047,x,y+.055,z,h.cy);C(.13,.045,0xd7a64b,x,y+.11,z,h.cy)}else{C(.12,.035,0xf5deb3,x,y,z,h.cy);C(.09,.09,lv%2?0x43a047:0xe67e22,x,y+.065,z,h.cy)}})}
+const SK={normal:{ct:0x8d5524,ce:0,mc:0xb0bec5,me:0},golden:{ct:0x8d5524,ce:0,mc:0xffd700,me:0x553300},neon:{ct:0x00e5ff,ce:0x006b7a,mc:0xff00c8,me:0x660055},vip:{ct:0xffd700,ce:0x332200,mc:0x6a1b9a,me:0x200050}};
+const MS=[{type:0,x:-4.5,stock:0,t:0,n:"MAKE"},{type:1,x:-1.8,stock:0,t:0,n:"PREP"}];
+function buildShop(){if(shop)sc.remove(shop);shop=new THREE.Group();sc.add(shop);const k=SK[S.skin];
+B(18,.1,8,0xe0c9a0,0,-.05,-.5,shop);B(11,.1,8,0x7aa0d8,-14.5,-.05,-.5,shop);B(12,.1,8,0xd98bb5,15,-.05,-.5,shop);B(42,3.5,.3,0x6d4c41,.5,1.75,-4.2,shop);
+ // Bright cafe windows, tables and chairs for customers
+ for(let wx=-7;wx<=8;wx+=5){B(2.8,1.65,.08,0x8ed5f4,wx,2.35,-4.0,shop);B(2.95,.1,.12,0xffffff,wx,1.5,-3.94,shop);B(.1,1.8,.12,0xffffff,wx,2.35,-3.94,shop);B(.1,1.8,.12,0xffffff,wx,2.35,-3.94,shop);B(.1,1.8,.12,0xffffff,wx,2.35,-4.02,shop);B(.1,1.8,.12,0xffffff,wx,2.35,-4.02,shop)}
+ for(let tx of [-10,-5,9,13]){C(.72,.12,0x9b6338,tx,1.05,1.0,shop);C(.08,1.0,0x68452c,tx,0.52,1.0,shop);for(let a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const cx=tx+Math.sin(a)*1.05,cz=1+Math.cos(a)*1.05;B(.48,.75,.45,0x287c78,cx,.42,cz,shop);B(.48,.12,.45,0xd7b17a,cx,.83,cz,shop)}}
+ B(42,.12,.25,0xffd180,.5,3.45,-4.0,shop);
+if(S.skin=="vip")B(7,.03,2.4,0xb71c1c,0,.01,1.6,shop);
+const ct=B(4.8,1,.8,k.ct,3.5,.5,-.5,shop,k.ce);ct.userData.k="ctr";add(lab("WAITING TEA ↓","#b71c1cdd",2.6),3.5,1.9,-.5,shop);
+MS.forEach((m,i)=>{m.n=(S.level||1)<=2?(S.level==1?(i?"GINGER TEA":"MASALA TEA"):(i?"ICED COFFEE":"HOT COFFEE")):(i?"PREP STATION":"COOK STATION");const b=B(1.5,1.9,1,k.mc,m.x,.95,-1.7,shop,k.me);b.userData.k="m"+i;B(1.5,.3,1.1,CC[i],m.x,2.05,-1.7,shop);C(.1,.3,0x555555,m.x,.9,-1.15,shop);B(.9,.06,.5,0x333333,m.x,.35,-1.1,shop);add(lab(m.n,"#000c",2.6),m.x,2.8,-1.7,shop);m.g=new THREE.Group();m.g.position.set(m.x,.45,-1.1);shop.add(m.g);m.cur=-1});
+[[-15,"UPGRADE ROOM","#1565c0dd"],[15,"HIRING ROOM","#ad1457dd"]].forEach(([x,t,c])=>{C(1.1,.06,0xffeb3b,x,.04,.6,shop,0x665500);add(lab(t,c,3),x,2.6,-1.5,shop)});
+[[-8,"⬅ UPGRADE ROOM","u"],[8.6,"HIRE ROOM ➡","h"]].forEach(([x,t,key])=>{const s=add(lab(t,"#000c",2.8),x,2.7,-2,shop);s.userData.k=key})}
+function drawStock(m){if(m.cur==m.stock)return;m.cur=m.stock;while(m.g.children.length)m.g.remove(m.g.children[0]);for(let i=0;i<m.stock;i++)C(.1,.17,CC[m.type],-.3+i*.2,.1,0,m.g)}
+function drawSlots(){while(SG.children.length)SG.remove(SG.children[0]);SL.forEach((t,i)=>{if(t!=null)C(.11,.18,CC[t],2+i*1.1,1.1,-.5,SG)})}
+const sleep=async ms=>{await new Promise(r=>setTimeout(r,ms));while(paused)await new Promise(r=>setTimeout(r,200))};
+const walk=(h,x,z,sp)=>new Promise(r=>{h.t={x,z,r,sp:sp||3.2}}),face=(h,a)=>h.g.rotation.y=a;
+const spd=()=>3.2+S.U[0]*.7,cap=()=>2+S.U[1],brew=()=>6*.8**S.U[2],price=()=>10+5*S.U[3];
+function grab(h,m,max){while(m.stock>0&&h.c.length<max){m.stock--;h.c.push(m.type)}drawCarry(h);drawStock(m)}
+function put(h){while(h.c.length){const i=SL.indexOf(null);if(i<0)break;SL[i]=h.c.shift()}drawSlots();drawCarry(h)}
+function fx(p,t,c){const s=lab(t,c||"#2e7d32",1.8);s.position.set(p.x,3.2,p.z);sc.add(s);FX.push({s,t:0})}
+function serve(h,c){let i=h.c.indexOf(c.w);if(i>=0)h.c.splice(i,1);else{i=SL.indexOf(c.w);if(i<0)return false;SL[i]=null;drawSlots()}
+drawCarry(h);c.ok=1;c.bub.visible=false;c.bar.visible=false;S.coins+=price();S.progress=(S.progress||0)+1;
+ if(S.progress>=6&&S.level<50){S.progress=0;S.level++;fx(c.h.g.position,"LEVEL "+S.level+" UNLOCKED","#1565c0");buildShop();updateLevel()}
+ fx(c.h.g.position,"+₹"+price());updateLevel();save();leaveC(c);return true}
+async function leaveC(c){const i=CU.indexOf(c);if(i<0)return;CU.splice(i,1);c.bub.visible=false;c.bar.visible=false;await walk(c.h,11,-2.2,2.6);sc.remove(c.h.g);hs.splice(hs.indexOf(c.h),1)}
+let tok=0;async function act(f){const k=++tok;try{await f(()=>k==tok)}catch(e){}}
+const tapM=i=>act(async ok=>{const m=MS[i];await walk(PL,m.x,.6,spd());if(!ok())return;face(PL,Math.PI);grab(PL,m,cap())});
+const tapCt=()=>act(async ok=>{await walk(PL,3.5,.9,spd());if(!ok())return;face(PL,Math.PI);put(PL)});
+const tapC=c=>act(async ok=>{await walk(PL,c.h.g.position.x,.5,spd());if(!ok())return;face(PL,Math.PI);if(!c.ok&&!serve(PL,c))fx(c.h.g.position,"No tea!","#b71c1c")});
+const tapPad=x=>act(async ok=>{await walk(PL,x,.6,spd())});
+function newW(col){return spawnH({s:col,hat:0x222222,k:0xc68642,p:0x222222},3,3)}
+async function brewer(){const h=newW(0x43a047);for(;;){await sleep(500);const m=MS.reduce((a,b)=>b.stock>a.stock?b:a);if(m.stock<1||SL.indexOf(null)<0)continue;await walk(h,m.x,.6);face(h,Math.PI);grab(h,m,1);await sleep(300);await walk(h,3.5,.9);face(h,Math.PI);put(h)}}
+async function server(){const h=newW(0x5c6bc0);for(;;){await sleep(500);const c=CU.find(c=>c.arr&&!c.ok&&!c.cl&&SL.includes(c.w));if(!c)continue;c.cl=1;await walk(h,3.5,.9);await walk(h,c.h.g.position.x,.5);face(h,Math.PI);if(!c.ok&&CU.includes(c))serve(h,c);c.cl=0}}
+function spawnC(){const pool=S.prem?TY:TY.slice(0,5),t=pool[Math.random()*pool.length|0],si=[0,1,2].find(i=>!CU.some(c=>c.slot==i));if(si==null)return;
+const h=spawnH(t,11,-2.2),w=Math.random()*2|0,c={h,w,slot:si,pat:30,arr:0};h.g.userData={k:"c",c};
+const request=(S.level||1)==1?(w?"Ginger Tea":"Masala Tea"):(S.level==2?(w?"Iced Coffee":"Hot Coffee"):levelName());
+ c.bub=lab(request,"#"+CC[w].toString(16).padStart(6,"0")+"ee",1.9);c.bub.position.set(0,2.75,0);h.g.add(c.bub);c.bar=B(.9,.08,.02,0x43a047,0,2.4,0,h.g);CU.push(c);
+walk(h,2.2+si*1.5,-2.2,2.6).then(()=>{c.arr=1;face(h,0)})}
+function mv(h,dt){const t=h.t,g=h.g;if(t){const dx=t.x-g.position.x,dz=t.z-g.position.z,d=Math.hypot(dx,dz);if(d<.06){h.t=null;t.r()}else{const s=Math.min(d,t.sp*dt);g.position.x+=dx/d*s;g.position.z+=dz/d*s;g.rotation.y=Math.atan2(dx,dz);h.ph+=dt*t.sp*2.2}}
+const a=(h.t||h.mv)?Math.sin(h.ph)*.7:0;h.L.rotation.x=a;h.R.rotation.x=-a;h.AL.rotation.x=-a;h.AR.rotation.x=a}
+let last=performance.now(),gap=1;
+function tick(n){const dt=paused?0:Math.min(.05,(n-last)/1000);last=n;
+MS.forEach(m=>{if(m.stock<4){m.t+=dt;if(m.t>=brew()){m.t=0;m.stock++}drawStock(m)}});
+gap-=dt;if(gap<0&&CU.length<3){spawnC();gap=3.5}
+CU.forEach(c=>{if(c.arr&&!c.ok){c.pat-=dt;c.bar.scale.x=Math.max(.01,c.pat/30);if(c.pat<=0){fx(c.h.g.position,"😠","#b71c1c");leaveC(c)}}});
+{const v=Math.hypot(jv.x,jv.y);PL.mv=v>.15&&!paused;if(PL.mv){const s=spd()*dt*Math.min(1,v),g=PL.g;g.position.x=Math.max(-20,Math.min(21,g.position.x+jv.x/v*s));g.position.z=Math.max(.2,Math.min(3.2,g.position.z+jv.y/v*s));g.rotation.y=Math.atan2(jv.x,jv.y);PL.ph+=dt*spd()*2.2}
+const g=PL.g.position;if(!paused&&g.z<1.5){MS.forEach(m=>{if(Math.abs(g.x-m.x)<1.1&&m.stock>0&&PL.c.length<cap())grab(PL,m,cap())});if(g.x>1.2&&g.x<6){CU.slice().forEach(c=>{if(c.arr&&!c.ok&&Math.abs(g.x-c.h.g.position.x)<1)serve(PL,c)});if(PL.c.length)put(PL)}}}
+hs.forEach(h=>mv(h,dt));
+for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.s.position.y+=dt;if((f.t+=dt)>1.2){sc.remove(f.s);FX.splice(i,1)}}
+const px=PL.g.position.x,pz=PL.g.position.z,nu=Math.hypot(px+15,pz-.6)<1.2,nh=Math.hypot(px-15,pz-.6)<1.2;
+if(!nu&&!nh)lock=0;if(!pn&&!lock){if(nu)room(0);else if(nh)room(1)}
+cx+=(px-cx)*Math.min(1,dt*3);cam.position.set(cx,8*K,9.5*K);cam.lookAt(cx,.8,-.5);
+$("cr").textContent="🫖 "+PL.c.length+"/"+cap();$("co").textContent="₹ "+S.coins;
+R.render(sc,cam);requestAnimationFrame(tick)}
+const rc=new THREE.Raycaster(),pl=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+R.domElement.addEventListener("pointerdown",e=>{return;rc.setFromCamera(new THREE.Vector2(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1),cam);
+const hit=rc.intersectObjects([shop,...CU.map(c=>c.h.g)],true);for(const x of hit){let o=x.object;while(o&&!o.userData.k)o=o.parent;if(o){const k=o.userData.k;
+if(k=="m0")return tapM(0);if(k=="m1")return tapM(1);if(k=="ctr")return tapCt();if(k=="c")return tapC(o.userData.c);if(k=="u")return tapPad(-15);if(k=="h")return tapPad(15)}}
+const p=new THREE.Vector3();if(rc.ray.intersectPlane(pl,p))act(async ok=>{await walk(PL,Math.max(-20,Math.min(21,p.x)),Math.max(.3,Math.min(3,p.z)),spd())})});
+const UP=[["🏃 Walk speed",40],["🧺 Carry more cups",50],["⚙️ Faster machines",60],["💰 Tea price",50]],HR=[["🧑‍🍳 Brewer: fetches tea from machines",60],["🧑‍💼 Server: serves customers",80]];
+function room(r){pn=1;const el=$("pn");el.style.display="block";const b=$("pnb");
+if(r==0)b.innerHTML="<h2>Upgrade Room</h2>"+UP.map((u,i)=>{const c=Math.round(u[1]*1.7**S.U[i]);return `<button data-i="${i}" ${S.U[i]>=6||S.coins<c?"disabled":""}>${u[0]} Lv${S.U[i]} — ${S.U[i]>=6?"MAX":"₹"+c}</button>`}).join("")+'<button class="alt" id="x">Close</button>';
+else b.innerHTML="<h2>Hiring Room</h2>"+HR.map((u,i)=>{const c=u[1]*2**S.H[i];return `<button data-i="${i}" ${S.H[i]>=3||S.coins<c?"disabled":""}>${u[0]} (${S.H[i]}/3) — ${S.H[i]>=3?"MAX":"₹"+c}</button>`}).join("")+'<button class="alt" id="x">Close</button>';
+b.querySelectorAll("[data-i]").forEach(x=>x.onclick=()=>{const i=+x.dataset.i;if(r==0){const c=Math.round(UP[i][1]*1.7**S.U[i]);if(S.coins>=c){S.coins-=c;S.U[i]++}}else{const c=HR[i][1]*2**S.H[i];if(S.coins>=c){S.coins-=c;S.H[i]++;(i?server:brewer)()}}save();room(r)});
+$("x").onclick=()=>{$("pn").style.display="none";pn=0;lock=1}}
+$("pb").onclick=openPm;
+const opt=(o,v)=>o.map(a=>`<option value="${a[0]}" ${a[0]==v?"selected":""}>${a[1]}</option>`).join("");
+function openPm(){paused=true;const m=$("pm");m.style.display="flex";const d=S.done,n=(d.ig?1:0)+(d.yt?1:0)+(d.sh?1:0);let h;
+if(S.prem)h=`<h2>⭐ Premium Active</h2><small>No ads • extra customers unlocked</small><p>Look<select id="lk">${opt([["none","Plain shirt"],["coolie","Coolie look"],["mass","Mass look"],["shades","Sunglasses look"],["gold","Gold chain look"]],S.look)}</select></p><p>Bandi skin<select id="sk">${opt([["normal","Normal bandi"],["golden","Golden Chai Machine"],["neon","Neon Bandi"],["vip","VIP Stall"]],S.skin)}</select></p><button class="ok" id="cl">Play</button>`;
+else h=`<h2>⭐ Unlock Premium</h2><small>No ads • 4 looks • College girl, Police, Driver, Hero • Golden, Neon, VIP skins</small><button id="t1" class="${d.ig?"ok":""}">${d.ig?"✅":"1."} Follow on Instagram</button><button id="t2" class="${d.yt?"ok":""}">${d.yt?"✅":"2."} Subscribe on YouTube</button><button id="t3" class="${d.sh?"ok":""}">${d.sh?"✅":"3."} Share with a friend (WhatsApp)</button><small>${n}/3 tasks done</small><button class="alt" id="py">Or pay ₹49</button><button class="alt" id="cl">Close</button><small id="ms"></small>`;
+$("pmb").innerHTML=h;
+if(S.prem){$("lk").onchange=e=>{S.look=e.target.value;save();mkPL()};$("sk").onchange=e=>{S.skin=e.target.value;save();buildShop();MS.forEach(m=>{m.cur=-1;drawStock(m)})}}
+else{const t=(id,k,u)=>$(id).onclick=()=>{window.open(u,"_blank");S.done[k]=1;if(S.done.ig&&S.done.yt&&S.done.sh)S.prem=1;save();openPm()};
+t("t1","ig",IG);t("t2","yt",YT);t("t3","sh","https://wa.me/?text="+encodeURIComponent("Try Chai Wala 3D! "+location.href));$("py").onclick=()=>$("ms").textContent="Payment not connected yet. Add your UPI ID to enable ₹49."}
+$("cl").onclick=()=>{m.style.display="none";paused=false;$("tag").textContent=S.prem?"PREMIUM ✨":"Free"}}
+$("tag").textContent=S.prem?"PREMIUM ✨":"Free";
+const jv={x:0,y:0},jy=$("joy"),kn=$("knob"),keys={};let jid=null;
+function js(e){const r=jy.getBoundingClientRect(),dx=e.clientX-r.left-65,dy=e.clientY-r.top-65,d=Math.hypot(dx,dy),m=Math.min(d,50)/50;jv.x=d?dx/d*m:0;jv.y=d?dy/d*m:0;kn.style.transform=`translate(${jv.x*40}px,${jv.y*40}px)`}
+jy.onpointerdown=e=>{jid=e.pointerId;jy.setPointerCapture(jid);js(e)};jy.onpointermove=e=>{if(e.pointerId==jid)js(e)};
+jy.onpointerup=jy.onpointercancel=()=>{jid=null;jv.x=jv.y=0;kn.style.transform=""};
+function kj(){if(jid!=null)return;jv.x=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0);jv.y=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0)}
+addEventListener("keydown",e=>{keys[e.key]=1;kj()});addEventListener("keyup",e=>{keys[e.key]=0;kj()});
+$("fs").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+const orientationTip=$("rotate");
+function closeOrientationTip(){orientationTip.style.display="none";try{sessionStorage.setItem("chaiOrientationTipShown","1")}catch(e){}}
+$("keepPortrait").onclick=closeOrientationTip;$("landscapeOk").onclick=closeOrientationTip;
+try{if(!sessionStorage.getItem("chaiOrientationTipShown")){orientationTip.style.display="flex"}}catch(e){orientationTip.style.display="flex"}
+
+const WARDROBE=[
+ ["chef","👨‍🍳 Chef uniform",0xffffff,0x222222],
+ ["red","🔴 Red jacket",0xd32f2f,0x222222],
+ ["blue","🔵 Blue jacket",0x1565c0,0x222222],
+ ["green","🟢 Green apron",0x2e7d32,0x5d4037],
+ ["purple","🟣 Royal outfit",0x7b1fa2,0x222222],
+ ["gold","✨ Golden outfit",0xffc107,0x5d4037],
+ ["casual","👕 Casual outfit",0x00acc1,0x263238],
+ ["pink","🌸 Pink outfit",0xec407a,0x263238]
+];
+function openWardrobe(){paused=true;$("outfit").style.display="flex";$("outfits").innerHTML=WARDROBE.map(w=>`<button data-out="${w[0]}" class="${S.outfit===w[0]?"ok":""}">${w[1]}</button>`).join("");$("outfits").querySelectorAll("[data-out]").forEach(b=>b.onclick=()=>{S.outfit=b.dataset.out;const w=WARDROBE.find(x=>x[0]===S.outfit);LK.none.s=w[2];LK.none.p=w[3];S.look="none";save();mkPL();openWardrobe()})}
+$("dress").onclick=openWardrobe;$("outfitclose").onclick=()=>{$("outfit").style.display="none";paused=false};
+buildShop();mkPL();updateLevel();for(let i=0;i<S.H[0];i++)brewer();for(let i=0;i<S.H[1];i++)server();requestAnimationFrame(tick);
+</script></body></html>
